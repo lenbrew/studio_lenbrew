@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你的名字 | 興趣使然的創作者</title>
+<meta name="description" content="興趣使然的創作者 — 桌遊設計、角色故事創作">
+
+<!--
+=====================================================================
+  這個網頁怎麼編輯？
+=====================================================================
+  這是一個「純文字檔」,用任何文字編輯器打開都能改(記事本、VS Code、
+  或直接在GitHub網頁上點鉛筆圖示編輯都可以)。
+
+  你只需要修改「文字內容」跟「連結網址」,不需要動到 <style> 裡的
+  CSS 樣式(除非你想改顏色/字體/排版,那部分說明在 <style> 區塊開頭)。
+
+  找到要改的地方最快的方法:
+  用 Ctrl+F (或 Cmd+F) 搜尋下面這些關鍵字,每個都對應一個要填的地方:
+
+    【改標題】  →  瀏覽器分頁上顯示的標題
+    【改姓名】  →  你的名字/暱稱
+    【改自介】  →  自我介紹文字
+    【改作品1】【改作品2】【改作品3】 → 作品集的三張卡片
+    【改社群】  → X / Threads / pixiv 等連結
+
+  每張作品卡片需要:
+    1. 一張圖片網址(建議做法:把圖片放進同一個GitHub repo的
+       /images 資料夾,再把圖片路徑填進 src="images/xxx.jpg"）
+    2. 一個連結網址(href="https://...")，點圖片會連過去
+    3. 標題文字、一行簡短說明文字
+
+  目前檔案裡的網址、圖片都是「假資料」,方便你直接看到排版效果,
+  上線前記得把所有寫著「範例/假連結」的地方換成你的真實內容。
+=====================================================================
+-->
+
+<style>
+  /*
+    =================================================================
+    以下是視覺樣式設定。如果你只想改文字內容,可以完全略過這一段。
+    如果想調整顏色,改下面 :root 裡的色碼即可,全站顏色會跟著變。
+    =================================================================
+  */
+  :root {
+    --paper: #ffffff;      /* 背景色:紙白 */
+    --ink: #1c1c1c;        /* 主要文字色:墨黑 */
+    --ink-soft: #6b6459;   /* 次要文字色:淡墨灰 */
+    --brush: #b7272c;      /* 強調色:硃紅(呼應毛筆筆畫) */
+    --card: #faf8f5;       /* 卡片底色:米白 */
+    --line: #e7e2da;       /* 分隔線色 */
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans TC", -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, .brush-word {
+    font-family: "Noto Serif TC", "Songti TC", serif;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* ---------- Hero 區 ---------- */
+  .hero {
+    position: relative;
+    padding: 96px 0 72px;
+    overflow: hidden;
+  }
+
+  .hero .wrap { position: relative; z-index: 2; }
+
+  .brush-stroke {
+    position: absolute;
+    top: -40px;
+    right: -120px;
+    width: 480px;
+    height: auto;
+    z-index: 1;
+    opacity: 0.94;
+  }
+
+  .eyebrow-name {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+    line-height: 1.35;
+    max-width: 9.5em;
+  }
+
+  .hero h1 .accent {
+    color: var(--brush);
+  }
+
+  .hero-sub {
+    margin-top: 22px;
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 34em;
+  }
+
+  /* ---------- 自我介紹 ---------- */
+  .about {
+    padding: 8px 0 56px;
+    border-top: 1px solid var(--line);
+    padding-top: 48px;
+  }
+
+  .about p {
+    font-size: 16px;
+    max-width: 38em;
+  }
+
+  /* ---------- 作品集 ---------- */
+  .section-title {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+  }
+
+  .works {
+    padding: 40px 0 56px;
+    border-top: 1px solid var(--line);
+  }
+
+  .work-card {
+    display: grid;
+    grid-template-columns: 108px 1fr;
+    gap: 20px;
+    align-items: center;
+    padding: 18px 0;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .work-card:last-child { border-bottom: none; }
+
+  .work-card img {
+    width: 108px;
+    height: 108px;
+    object-fit: cover;
+    border-radius: 2px;
+    background: var(--card);
+  }
+
+  .work-title {
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .work-desc {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  .work-card:hover .work-title { color: var(--brush); }
+
+  /* ---------- 社群連結 ---------- */
+  .social {
+    padding: 40px 0 96px;
+    border-top: 1px solid var(--line);
+  }
+
+  .social-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 20px;
+  }
+
+  .social-list a {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 14px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .social-list a:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  footer {
+    padding: 28px 0 40px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    .hero { padding: 64px 0 48px; }
+    .hero h1 { font-size: 30px; }
+    .brush-stroke { width: 320px; top: -20px; right: -140px; }
+    .work-card { grid-template-columns: 72px 1fr; }
+    .work-card img { width: 72px; height: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO 區:名字+一句話介紹 ============ -->
+<section class="hero">
+  <div class="wrap">
+
+    <!-- 【改姓名】把「你的名字」換成你想公開的名字/暱稱 -->
+
+	<img src="image/Len_brew_logo.png" alt="Len brew">
+    <h1>Len brew</h1>
+
+    <!-- 【改自介】這句是最主要的一句話介紹,目前放的是你選定的說法 -->
+    <h2>Someone who’s a creator for fun.</h2>
+
+    </p>
+  </div>
+
+</section>
+
+<!-- ============ 自我介紹段落 ============ -->
+<section class="about">
+  <div class="wrap">
+    <!-- 【改自介】這裡可以多寫一兩段,介紹自己的背景、風格、理念 -->
+    <p>
+      Lne=1，Len=?
+    </p>
+  </div>
+</section>
+
+<!-- ============ 作品集區 ============ -->
+<section class="works">
+  <div class="wrap">
+    <div class="section-title"></div>
+
+    <!-- 【改作品1】第一張作品卡片,把圖片、連結、標題、說明換成真的 -->
+    <a class="work-card" href="https://lenbrew.github.io/mukaimusoumushura/index.html" target="_blank" rel="noopener">
+      <img src="image/mushura.jpg" alt="無界無双無修羅">
+      <div>
+        <div class="work-title">無界無双無修羅</div>
+        <div class="work-desc">支援2-4人，將動漫般的心理博弈與激烈交鋒搬上桌面的快節奏格鬥卡牌遊戲。</div>
+      </div>
+    </a>
+
+    <!-- 【改作品2】 -->
+    <a class="work-card" href="https://lenbrew.github.io/mukaimusoumushura/index.html" target="_blank" rel="noopener">
+      <img src="image/shadowstep.jpg" alt="SHADOWSTEP">
+      <div>
+        <div class="work-title">SHADOWSTEP</div>
+        <div class="work-desc">兩人遊戲。想用微縮模型玩遊戲，又不想讀規則，乾脆做成名片體量的踩影子戰棋。</div>
+      </div>
+    </a>
+
+    <!-- 【改作品3】 -->
+    <a class="work-card" href="https://www.facebook.com/WarofCardcrafters/" target="_blank" rel="noopener">
+      <img src="image/ibuki.jpg" alt="War of cardcrafters">
+      <div>
+        <div class="work-title">War of cardcrafters</div>
+        <div class="work-desc">和朋友合作的舊專案。停止更新。</div>
+      </div>
+    </a>
+
+    <!--
+      如果想新增第四張、第五張作品卡片,直接複製上面一整塊
+      <a class="work-card" ...> ... </a>
+      貼在下面、改內容即可,排版會自動對齊。
+    -->
+
+  </div>
+</section>
+
+<!-- ============ 社群連結區 ============ -->
+<section class="social">
+  <div class="wrap">
+    <div class="section-title">社群連結</div>
+    <div class="social-list">
+      <!-- 【改社群】把 href="" 裡的網址換成你的真實帳號連結 -->
+      <a href="https://x.com/studio_Lenbrew" target="_blank" rel="noopener">X (Twitter)</a>
+      <a href="https://www.threads.com/@len_brew" target="_blank" rel="noopener">Threads</a>
+      <a href="https://www.pixiv.net/users/342779" target="_blank" rel="noopener">pixiv</a>
+      <!-- 需要更多連結,複製上面一行 <a href="...">名稱</a> 貼上即可 -->
+    </div>
+  </div>
+</section>
+
+<footer>
+  © Len brew
+</footer>
+
+</body>
+</html>
