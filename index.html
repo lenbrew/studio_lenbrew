@@ -6,6 +6,22 @@
 <title>Studio Len brew</title>
 <meta name="description" content="興趣使然的創作者">
 
+<!-- 【語言設定】優先順序:網址 ?lang=en → 上次選過的語言 → 瀏覽器語言 → 中文 -->
+<script>
+  (function () {
+    var ok = ["zh-Hant", "en", "ja"];
+    var q = new URLSearchParams(location.search).get("lang");
+    var map = { zh: "zh-Hant", "zh-hant": "zh-Hant", "zh-tw": "zh-Hant", en: "en", ja: "ja" };
+    var lang = map[(q || "").toLowerCase()];
+    if (!lang) { try { lang = localStorage.getItem("lang"); } catch (e) {} }
+    if (ok.indexOf(lang) < 0) {
+      var nav = (navigator.language || "").toLowerCase();
+      lang = nav.indexOf("ja") === 0 ? "ja" : nav.indexOf("zh") === 0 ? "zh-Hant" : nav ? "en" : "zh-Hant";
+    }
+    document.documentElement.lang = lang;
+  })();
+</script>
+
 <!--
 =====================================================================
   這個網頁怎麼編輯？
@@ -215,6 +231,39 @@
     text-align: center;
   }
 
+  /* ---------- 多語言 ----------
+     每段文字寫三份:<span class="zh">中文</span><span class="en">English</span><span class="ja">日本語</span>
+     只會顯示目前語言那一份,其餘自動隱藏。 */
+  html:not([lang="zh-Hant"]) .zh,
+  html:not([lang="en"]) .en,
+  html:not([lang="ja"]) .ja { display: none !important; }
+
+  html[lang="ja"] body { font-family: "Noto Sans JP", -apple-system, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif; }
+  html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] .work-title { font-family: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif; }
+
+  .lang-switch {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    gap: 4px;
+    font-size: 13px;
+  }
+  .lang-switch button {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .lang-switch button[aria-pressed="true"] {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
   @media (max-width: 480px) {
     .hero { padding: 64px 0 48px; }
     .hero h1 { font-size: 30px; }
@@ -226,6 +275,13 @@
 </head>
 <body>
 
+<!-- ============ 語言切換按鈕 ============ -->
+<nav class="lang-switch" aria-label="Language">
+  <button type="button" data-set-lang="zh-Hant">中</button>
+  <button type="button" data-set-lang="en">EN</button>
+  <button type="button" data-set-lang="ja">日</button>
+</nav>
+
 <!-- ============ HERO 區:名字+一句話介紹 ============ -->
 <section class="hero">
   <div class="wrap">
@@ -236,9 +292,11 @@
     <h1>Len brew</h1>
 
     <!-- 【改自介】這句是最主要的一句話介紹,目前放的是你選定的說法 -->
-    <h2>Someone who’s a creator for fun.</h2>
-
-    </p>
+    <h2>
+      <span class="zh">興趣使然的創作者。</span>
+      <span class="en">Someone who’s a creator for fun.</span>
+      <span class="ja">趣味で創作をやっている者だ。</span>
+    </h2>
   </div>
 
 </section>
@@ -263,16 +321,24 @@
       <img src="image/mushura.jpg" alt="無界無双無修羅">
       <div>
         <div class="work-title">無界無双無修羅</div>
-        <div class="work-desc">支援2-4人，將動漫畫作品的心理博弈與激烈交鋒搬上桌面的快節奏格鬥卡牌遊戲。</div>
+        <div class="work-desc">
+          <span class="zh">支援2-4人，將動漫畫作品的心理博弈與激烈交鋒搬上桌面的快節奏格鬥卡牌遊戲。</span>
+          <span class="en">A fast-paced fighting card game for 2–4 players that brings the mind games and fierce clashes of anime and manga to the tabletop.</span>
+          <span class="ja">アニメ・漫画の心理戦と激しい攻防を卓上で再現する、2〜4人用のスピーディーな対戦格闘カードゲーム。</span>
+        </div>
       </div>
     </a>
 
     <!-- 【改作品2】 -->
-    <a class="work-card" href="https://drive.google.com/file/d/1sPqhdoR49PGWVTUR3LreeFNCoGXv7bc1/view?usp=sharing" target="_blank" rel="noopener">
+    <a class="work-card" href="https://lenbrew.github.io/shadowstep/" target="_blank" rel="noopener">
       <img src="image/shadowstep.jpg" alt="SHADOWSTEP">
       <div>
-        <div class="work-title">SHADOWSTEP</div>
-        <div class="work-desc">兩人遊戲。兼作名片用的名片體量踩影子戰棋。</div>
+        <div class="work-title">SHADOWSTEP 影道須天步 β </div>
+        <div class="work-desc">
+          <span class="zh">兩人遊戲。兼作名片用的名片體量踩影子戰棋。</span>
+          <span class="en">A 2-player shadow-stepping tactics game, small enough to double as a business card.</span>
+          <span class="ja">2人用。名刺としても使える、名刺サイズの影踏み戦略ゲーム。</span>
+        </div>
       </div>
     </a>
 
@@ -281,7 +347,11 @@
       <img src="image/the_journey.jpg" alt="the Journey">
       <div>
         <div class="work-title">target-driven universal TRPG system - the Journey (仮)</div>
-        <div class="work-desc">抱著「想跑這樣的團」而寫的TRPG系統，但搞到最後都是自己在帶，沒人帶我跑。</div>
+        <div class="work-desc">
+          <span class="zh">抱著「想跑這樣的團」而寫的TRPG系統，但搞到最後都是自己在帶，沒人帶我跑。</span>
+          <span class="en">A TRPG system I wrote because I wanted to play games like this — yet I always end up as the GM, and nobody runs it for me.</span>
+          <span class="ja">「こんなセッションを遊びたい」と思って作ったTRPGシステム。でも結局いつも自分がGMで、誰も回してくれない。</span>
+        </div>
       </div>
     </a>
 
@@ -290,7 +360,11 @@
       <img src="image/ibuki.jpg" alt="War of cardcrafters">
       <div>
         <div class="work-title">War of cardcrafters</div>
-        <div class="work-desc">和朋友合作的舊專案。停止更新。</div>
+        <div class="work-desc">
+          <span class="zh">和朋友合作的舊專案。停止更新。</span>
+          <span class="en">An old project made with friends. No longer updated.</span>
+          <span class="ja">友人と共同制作した過去のプロジェクト。更新停止中。</span>
+        </div>
       </div>
      </a> 
 
@@ -306,7 +380,11 @@
 <!-- ============ 社群連結區 ============ -->
 <section class="social">
   <div class="wrap">
-    <div class="section-title">社群連結</div>
+    <div class="section-title">
+      <span class="zh">社群連結</span>
+      <span class="en">LINKS</span>
+      <span class="ja">SNS</span>
+    </div>
     <div class="social-list">
       <!-- 【改社群】把 href="" 裡的網址換成你的真實帳號連結 -->
       <a href="https://x.com/studio_Lenbrew" target="_blank" rel="noopener">X (Twitter)</a>
@@ -320,6 +398,41 @@
 <footer>
   © Len brew
 </footer>
+
+<!-- ============ 語言切換程式(通常不用改) ============ -->
+<script>
+  (function () {
+    // 分頁標題與描述(搜尋結果/分享預覽用),三種語言各一份
+    var meta = {
+      "zh-Hant": { title: "Studio Len brew", desc: "興趣使然的創作者" },
+      "en":      { title: "Studio Len brew", desc: "Someone who’s a creator for fun." },
+      "ja":      { title: "Studio Len brew", desc: "趣味で創作をやっている者だ。" }
+    };
+    var buttons = document.querySelectorAll("[data-set-lang]");
+
+    function setLang(lang) {
+      document.documentElement.lang = lang;
+      document.title = meta[lang].title;
+      document.querySelector('meta[name="description"]').content = meta[lang].desc;
+      buttons.forEach(function (b) {
+        b.setAttribute("aria-pressed", b.dataset.setLang === lang ? "true" : "false");
+      });
+      try { localStorage.setItem("lang", lang); } catch (e) {}
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var lang = b.dataset.setLang;
+        setLang(lang);
+        var url = new URL(location.href);
+        url.searchParams.set("lang", lang === "zh-Hant" ? "zh" : lang);
+        history.replaceState(null, "", url);
+      });
+    });
+
+    setLang(document.documentElement.lang);
+  })();
+</script>
 
 </body>
 </html>
