@@ -122,6 +122,23 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
 @keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.35)}100%{transform:none;opacity:1}}
 .res.fade,.det.fade{animation:fadeup .5s .25s ease both}
 @keyframes fadeup{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
+
+#cutin{position:fixed;inset:0;z-index:60;pointer-events:none;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+#cutin.show{display:flex;animation:cdim var(--d,1.6s) ease both}
+@keyframes cdim{0%{background:rgba(0,0,0,0)}12%{background:rgba(0,0,0,.45)}85%{background:rgba(0,0,0,.45)}100%{background:rgba(0,0,0,0)}}
+#cutin .band{width:100%;padding:16px 18px 14px;color:#fff;position:relative;overflow:hidden;box-shadow:0 0 0 2px #c9a227,0 8px 30px rgba(0,0,0,.6)}
+#cutin.r .band{background:linear-gradient(100deg,#5e130d,#a3241c 55%,#c9452f)}
+#cutin.b .band{background:linear-gradient(260deg,#0d2450,#1f4e9c 55%,#3a6fc4)}
+#cutin.show.r .band{animation:cinL var(--d,1.6s) cubic-bezier(.2,.9,.3,1) both}
+#cutin.show.b .band{animation:cinR var(--d,1.6s) cubic-bezier(.2,.9,.3,1) both}
+@keyframes cinL{0%{transform:translateX(-110%) skewX(-12deg)}14%{transform:translateX(0) skewX(-6deg)}84%{transform:translateX(0) skewX(-6deg);opacity:1}100%{transform:translateX(30%) skewX(-6deg);opacity:0}}
+@keyframes cinR{0%{transform:translateX(110%) skewX(12deg)}14%{transform:translateX(0) skewX(6deg)}84%{transform:translateX(0) skewX(6deg);opacity:1}100%{transform:translateX(-30%) skewX(6deg);opacity:0}}
+#cutin .who{font-size:12px;letter-spacing:3px;opacity:.85}
+#cutin .gn{font-family:"Noto Serif TC","Noto Serif CJK TC",serif;font-weight:900;font-size:34px;letter-spacing:6px;line-height:1.15;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+#cutin .gn small{font-size:18px;letter-spacing:3px;color:#ffe28a;margin-left:10px}
+#cutin .tx{font-size:16px;font-weight:700;color:#fff3c4;margin-top:4px}
+#cutin.b .band{text-align:right}
+.cmdtag{font-size:9.5px;font-weight:900;color:#3a2600;background:#ffd24a;border-radius:6px;padding:0 5px;margin:1px auto;width:max-content}
 </style>
 </head>
 <body>
@@ -159,6 +176,7 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
 
 <div id="banner"><div class="bx"><div class="bt" id="bnT"></div><div class="bs" id="bnS"></div></div></div>
 <div id="toast"></div>
+<div id="cutin"><div class="band"><div class="who" id="ciW"></div><div class="gn"><span id="ciN"></span><small id="ciT"></small></div><div class="tx" id="ciX"></div></div></div>
 <div class="modal" id="mInfo"><div class="box" id="infoBox"></div></div>
 <div class="modal" id="mRules"><div class="box">
   <h2>規則速覽</h2>
@@ -334,7 +352,7 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
     if (opts.gens && (opts.gens[0] || opts.gens[1])) {
       g.gen = [opts.gens[0] || null, opts.gens[1] || null];
       g.mor = [0, 0]; g.mor[g.first] += 1;
-      g.genReady = [true, true]; g.cmd = [false, false]; g.queue = [];
+      g.genReady = [true, true]; g.cmd = [false, false]; g.queue = []; g.events = [];
     }
     return g;
   }
@@ -388,7 +406,7 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
   }
   function actCommand(g, p, yes) {
     if (g.phase !== 'command' || g.queue[0] !== p) throw new Error('illegal command');
-    if (yes) { g.mor[p] -= GENERALS.marshal.cost; g.cmd[p] = true; log(g, `${p === 0 ? '你' : '電腦'}的統帥發動號令：本回合每張兵 +1`); }
+    if (yes) { g.mor[p] -= GENERALS.marshal.cost; g.cmd[p] = true; log(g, `${p === 0 ? '你' : '電腦'}的統帥發動號令：本回合每張兵 +1`); g.events.push({ p, gen: 'marshal', title: '號令', text: '本回合全軍每張兵 +1' }); }
     popQueue(g);
   }
   function shootTargets(g, p) {
@@ -406,7 +424,8 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
       if (x.card.v <= GENERALS.archer.range) {
         g.placed[o][f].splice(i, 1); g.discard[o].push(x.card);
         log(g, `${p === 0 ? '你' : '電腦'}的弓將射中${FIELD_NAME[f]}的${UNIT[x.card.v]}（${x.card.v}），撤退！`);
-      } else { g.shown[cardId] = true; log(g, `${p === 0 ? '你' : '電腦'}的弓將射向${FIELD_NAME[f]}：是${UNIT[x.card.v]}（${x.card.v}），擋下了`); }
+        g.events.push({ p, gen: 'archer', title: '射擊・命中', text: `${FIELD_NAME[f]}的${UNIT[x.card.v]}（${x.card.v}）撤退！` });
+      } else { g.shown[cardId] = true; log(g, `${p === 0 ? '你' : '電腦'}的弓將射向${FIELD_NAME[f]}：是${UNIT[x.card.v]}（${x.card.v}），擋下了`); g.events.push({ p, gen: 'archer', title: '射擊・未命中', text: `${FIELD_NAME[f]}的${UNIT[x.card.v]}（${x.card.v}）擋下了，牌已翻開` }); }
     }
     popQueue(g);
   }
@@ -417,6 +436,7 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
       g.mor[p] -= G.cost; g.genReady[p] = false;
       g.placed[p][f].push({ card: { id: 'G' + p + '_' + g.round, v: 0, gp: G.power, gname: G.name, isGen: true, owner: p }, amb: false });
       log(g, `${p === 0 ? '你' : '電腦'}的先鋒將突入${FIELD_NAME[f]}！`);
+      g.events.push({ p, gen: 'vanguard', title: '突入', text: `主將突入${FIELD_NAME[f]}，戰力 ${G.power}` });
     }
     popQueue(g);
   }
@@ -474,7 +494,7 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
   function actAmbush(g, p, cardId, f) {
     if (g.phase !== 'deploy' || g.turn !== p || !canAmbush(g, p)) throw new Error('illegal ambush');
     const card = takeCard(g, p, cardId);
-    if (g.pend[p]) { g.pend2[p] = { card, f }; g.mor[p] -= GENERALS.ambusher.cost; log(g, `${p === 0 ? '你' : '電腦'}的伏將：多埋 1 張伏兵（士氣 −1）`); }
+    if (g.pend[p]) { g.pend2[p] = { card, f }; g.mor[p] -= GENERALS.ambusher.cost; log(g, `${p === 0 ? '你' : '電腦'}的伏將：多埋 1 張伏兵（士氣 −1）`); g.events.push({ p, gen: 'ambusher', title: '伏兵', text: `多埋 1 張伏兵（${FIELD_NAME[f]}）` }); }
     else g.pend[p] = { card, f };
     if (RULES.ambSlot === 'now') g.slots[p]++;
     log(g, p === 0 ? `你在${FIELD_NAME[f]}埋下伏兵` : `電腦在${FIELD_NAME[f]}埋下伏兵`);
@@ -674,6 +694,12 @@ let g=null, sel=null, ambMode=false, busy=false, diff='normal', showRes=false;
 let stage=null, flipNow=false, openedBefore=false, lastTf=[null,null,null], seen=new Set(), logLen=0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function banner(t,sub,ms=1100){const b=$('banner');$('bnT').textContent=t;$('bnS').textContent=sub||'';b.style.setProperty('--d',ms+'ms');b.classList.remove('show');void b.offsetWidth;b.classList.add('show');return sleep(ms);}
+let evIdx=0;
+function cutin(e){const c=$('cutin'),G=FL.GENERALS[e.gen],ms=e.p===1?1700:1200;
+  c.className='';$('ciW').textContent=e.p===0?'你的武將':'電腦的武將';$('ciN').textContent=G.name;$('ciT').textContent=e.title;$('ciX').textContent=e.text;
+  c.style.setProperty('--d',ms+'ms');void c.offsetWidth;c.className='show '+(e.p===0?'r':'b');
+  return sleep(ms).then(()=>{c.className='';});}
+async function playEvents(){while(g.events&&evIdx<g.events.length){await cutin(g.events[evIdx++]);}}
 function toast(t){const d=document.createElement('div');d.textContent=t;$('toast').appendChild(d);setTimeout(()=>d.remove(),2500);}
 const tfOf=(own,full)=>own===-1?'none':own===0?(full?'rotate(90deg) scale(.9)':'rotate(30deg)'):(full?'rotate(-90deg) scale(.9)':'rotate(-30deg)');
 const $=id=>document.getElementById(id);
@@ -749,6 +775,7 @@ function render(){
       let pe=null;
       if(g.pend[side]&&g.pend[side].f===f){pe=cardEl(side===0?g.pend[0].card:null,'s',side,{back:side===1,amb:true});pe.classList.add('pend');}
       let pe2=null; if(g.pend2&&g.pend2[side]&&g.pend2[side].f===f){pe2=cardEl(side===0?g.pend2[0].card:null,'s',side,{back:side===1,amb:true});pe2.classList.add('pend');}
+      if(g.cmd&&g.cmd[side]&&!res){const t=document.createElement('div');t.className='cmdtag';t.textContent='號令 +1';if(side===1)L.appendChild(t);else setTimeout(()=>L.appendChild(t));}
       if(side===1){ if(pe2)L.appendChild(pe2); if(pe)L.appendChild(pe); if(det)L.appendChild(det); L.appendChild(st); L.appendChild(pw); }
       else { L.appendChild(pw); L.appendChild(st); if(det)L.appendChild(det); if(pe)L.appendChild(pe); if(pe2)L.appendChild(pe2); }
       return L;
@@ -820,7 +847,7 @@ function render(){
   $('msg').textContent=m;
   $('log').innerHTML=g.log.slice(-6).reverse().map(s=>'· '+s).join('<br>');
   if(g.log.length<logLen) logLen=0;
-  for(const t of g.log.slice(logLen)) if(!t.startsWith('武將：')&&/弓將|先鋒將|號令|伏將|歸隊|伏兵在|洗成新牌庫/.test(t)) toast(t);
+  for(const t of g.log.slice(logLen)) if(!t.startsWith('武將：')&&/歸隊|伏兵在|洗成新牌庫/.test(t)) toast(t);
   logLen=g.log.length;
 }
 function endText(){const r=g.result;return r.winner===0?`你贏了！（${r.how}）`:r.winner===1?`電腦獲勝（${r.how}）`:`平手（${r.how}）`;}
@@ -833,6 +860,7 @@ function doPlace(f){
   sel=null; ambMode=false; after();
 }
 function after(){
+  if(g.events&&evIdx<g.events.length){ busy=true; render(); playEvents().then(()=>{busy=false;after();}); return; }
   if(g.phase==='charge') openedBefore=true;
   render();
   if(g.phase==='deploy'&&g.turn===1){ busy=true; render(); setTimeout(aiStep,700); }
@@ -872,7 +900,7 @@ function doSupply(){
   seen=new Set(); busy=true; render();
   banner(`第 ${g.round} 回合`,`先手：${ownerName(g.first)}`).then(()=>{busy=false;after();});
 }
-function showEnd(){ $('endT').textContent=g.result.winner===0?'🏆 勝利！':g.result.winner===1?'敗北':'平手'; $('endS').textContent=endText(); $('mEnd').classList.add('show'); render(); }
+function showEnd(){ if(!g||!g.result) return; $('endT').textContent=g.result.winner===0?'🏆 勝利！':g.result.winner===1?'敗北':'平手'; $('endS').textContent=endText(); $('mEnd').classList.add('show'); render(); }
 function showInfo(f){
   $('infoBox').innerHTML=`<h2>${FINFO[f].n}</h2><img src="${IMG(`${FIMG[f]}`)}"><ul>${FINFO[f].e.map(x=>'<li>'+x+'</li>').join('')}</ul>`+
    `<p style="opacity:.7">任何戰場要改變狀態，戰力都要多 2 點以上。</p><div class="row"><button class="pri" data-close="mInfo">關閉</button></div>`;
@@ -887,7 +915,7 @@ function startGame(){
   sel=null; ambMode=false; busy=false; showRes=false;
   g.log.push(`【${FL.MODES[mode].name}模式】`);
   g.log.push(`— 第 1 回合，擲硬幣：${ownerName(g.first)}先手 —`);
-  $('mStart').classList.remove('show'); seen=new Set(); lastTf=[null,null,null]; logLen=0; stage=null; openedBefore=false;
+  $('mStart').classList.remove('show'); seen=new Set(); lastTf=[null,null,null]; logLen=0; evIdx=0; stage=null; openedBefore=false;
   busy=true; render(); banner('第 1 回合',`先手：${ownerName(g.first)}（擲硬幣）`).then(()=>{busy=false;after();});
 }
 document.addEventListener('click',e=>{const c=e.target.getAttribute&&e.target.getAttribute('data-close'); if(c) $(c).classList.remove('show');});
