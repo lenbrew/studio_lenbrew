@@ -102,6 +102,26 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
 .card.shown{outline:2px solid #ffd24a}
 #genPick button,#oppPick button{font-size:13px;padding:6px 8px}
 .gdesc{opacity:.8;font-size:12.5px;margin:4px 0 8px;line-height:1.45}
+
+#banner{position:fixed;left:0;right:0;top:38%;z-index:50;pointer-events:none;display:flex;justify-content:center}
+#banner .bx{background:linear-gradient(90deg,transparent,rgba(20,14,8,.92) 15%,rgba(20,14,8,.92) 85%,transparent);color:#f6e3b0;padding:14px 60px;text-align:center;opacity:0}
+#banner .bt{font-family:"Noto Serif TC","Noto Serif CJK TC",serif;font-weight:900;font-size:30px;letter-spacing:6px}
+#banner .bs{font-size:13px;opacity:.85;margin-top:2px;letter-spacing:1px}
+#banner.show .bx{animation:bnr var(--d,1.1s) ease both}
+@keyframes bnr{0%{opacity:0;transform:scaleX(.6)}18%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:45;pointer-events:none;display:flex;flex-direction:column;gap:4px;align-items:center}
+#toast div{background:rgba(30,22,12,.94);border:1px solid #c9a227;color:#ffe9b0;font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;animation:tst 2.4s ease both;white-space:nowrap}
+@keyframes tst{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}82%{opacity:1}100%{opacity:0}}
+.card.flip{animation:flipIn .45s ease both}
+@keyframes flipIn{0%{transform:rotateY(90deg);filter:brightness(1.6)}100%{transform:none;filter:none}}
+.card.enter{animation:enter .35s ease-out both}
+@keyframes enter{0%{transform:translateY(-16px) scale(1.15);opacity:0}100%{transform:none;opacity:1}}
+.col.focus{background:rgba(255,226,138,.16);box-shadow:0 0 0 2px #ffe28a inset}
+.col.dim{opacity:.55}
+.pw big.pop{display:inline-block;animation:pop .5s ease both}
+@keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.35)}100%{transform:none;opacity:1}}
+.res.fade,.det.fade{animation:fadeup .5s .25s ease both}
+@keyframes fadeup{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -137,6 +157,8 @@ button.on{background:#e8d9a8;color:#2b2622;box-shadow:0 0 0 2px var(--gold) inse
   <div class="row"><button class="sm" id="bRules2">先看規則</button><button class="pri" id="bGo">開始</button></div>
 </div></div>
 
+<div id="banner"><div class="bx"><div class="bt" id="bnT"></div><div class="bs" id="bnS"></div></div></div>
+<div id="toast"></div>
 <div class="modal" id="mInfo"><div class="box" id="infoBox"></div></div>
 <div class="modal" id="mRules"><div class="box">
   <h2>規則速覽</h2>
@@ -649,6 +671,11 @@ const FINFO=[
  {n:'平原 PLAINS',e:['<b>CAVALRY CHARGE</b>：回合開始時平原不是你的 → 每張騎兵 +2','<b>PHALANX</b>：你在平原有 2 張以上步兵 → 每張步兵 +1']},
  {n:'高地 HEIGHTS',e:['<b>HIGH GROUND</b>：弓兵、弩車每張 +1','<b>UPHILL</b>：回合開始時高地由對手佔領 → 你的民兵、步兵每張 −1；你有弩車在高地則不扣']}];
 let g=null, sel=null, ambMode=false, busy=false, diff='normal', showRes=false;
+let stage=null, flipNow=false, openedBefore=false, lastTf=[null,null,null], seen=new Set(), logLen=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function banner(t,sub,ms=1100){const b=$('banner');$('bnT').textContent=t;$('bnS').textContent=sub||'';b.style.setProperty('--d',ms+'ms');b.classList.remove('show');void b.offsetWidth;b.classList.add('show');return sleep(ms);}
+function toast(t){const d=document.createElement('div');d.textContent=t;$('toast').appendChild(d);setTimeout(()=>d.remove(),2500);}
+const tfOf=(own,full)=>own===-1?'none':own===0?(full?'rotate(90deg) scale(.9)':'rotate(30deg)'):(full?'rotate(-90deg) scale(.9)':'rotate(-30deg)');
 const $=id=>document.getElementById(id);
 
 function cardEl(c,size,side,opts={}){
@@ -667,6 +694,7 @@ function ownerName(o){return o===0?'你':'電腦';}
 
 function render(){
   const reveal=(g.phase==='supply'||g.phase==='over')&&showRes;
+  const done=f=>stage==null||f<stage;
   $('oHand').textContent=`手牌 ${g.hand[1].length}`;
   $('oDeck').textContent=`牌庫 ${g.deck[1].length}`+(g.mode==='quick'?`（重洗 ${g.reshLeft[1]}）`:'');
   $('oDisc').textContent=`棄牌 ${g.discard[1].length}`;
@@ -696,6 +724,8 @@ function render(){
     const col=document.createElement('div'); col.className='col';
     if(myTurn&&sel!=null) col.classList.add('target');
     const res=reveal&&g.lastBattle?g.lastBattle[f]:null;
+    const shown=res&&done(f);
+    if(stage!=null&&stage>=1){ if(f===stage-1) col.classList.add('focus'); else if(f>=stage) col.classList.add('dim'); }
     const lane=(side)=>{
       const L=document.createElement('div'); L.className='lane '+(side===1?'opp':'me');
       const st=document.createElement('div'); st.className='stack';
@@ -704,15 +734,18 @@ function render(){
       for(const x of cs){
         const pub=x.card.isGen||(g.shown&&g.shown[x.card.id]);
         const el=cardEl(x.card,'s',side,{back:side===1&&!res&&!opened&&!pub,amb:x.amb});
+        if(res&&flipNow&&side===1&&!pub){el.classList.add('flip');el.style.animationDelay=(f*120+Math.random()*80)+'ms';}
+        const key=String(x.card.id); if(!res&&!seen.has(key)){seen.add(key);el.classList.add('enter');}
         if(pub&&!x.card.isGen&&!res) el.classList.add('shown');
         if(side===1&&!res&&g.phase==='shoot'&&g.queue[0]===0&&!pub){el.classList.add('shoot');el.onclick=(e)=>{e.stopPropagation();FL.actShoot(g,0,f,x.card.id);after();};}
         st.appendChild(el);
       }
       const pw=document.createElement('div'); pw.className='pw '+(side===1?'b':'r');
-      if(res) pw.innerHTML=`<big>${side===0?res.p0:res.p1}</big>`;
+      if(res&&shown) pw.innerHTML=`<big class="${stage!=null&&f===stage-1?'pop':''}">${side===0?res.p0:res.p1}</big>`;
+      else if(res) pw.textContent='';
       else if((side===0||opened)&&g.placed[side][f].length) pw.innerHTML=`戰力 <big>${FL.power(g.placed[side][f].map(x=>({v:x.card.v,amb:x.amb,gp:x.card.gp,gname:x.card.gname})),f,g.ownerAtStart[f],side)}</big>`;
       else if(side===1&&g.placed[1][f].length) pw.textContent=`${g.placed[1][f].length} 張`;
-      const det=res&&(side===0?res.det0:res.det1).length?(()=>{const d=document.createElement('div');d.className='det '+(side===1?'b':'r');d.textContent=(side===0?res.det0:res.det1).join('・');return d;})():null;
+      const det=shown&&(side===0?res.det0:res.det1).length?(()=>{const d=document.createElement('div');d.className='det '+(side===1?'b':'r')+(stage!=null&&f===stage-1?' fade':'');d.textContent=(side===0?res.det0:res.det1).join('・');return d;})():null;
       let pe=null;
       if(g.pend[side]&&g.pend[side].f===f){pe=cardEl(side===0?g.pend[0].card:null,'s',side,{back:side===1,amb:true});pe.classList.add('pend');}
       let pe2=null; if(g.pend2&&g.pend2[side]&&g.pend2[side].f===f){pe2=cardEl(side===0?g.pend2[0].card:null,'s',side,{back:side===1,amb:true});pe2.classList.add('pend');}
@@ -722,7 +755,7 @@ function render(){
     };
     col.appendChild(lane(1));
     const fw=document.createElement('div'); fw.className='fieldwrap';
-    const own=g.owner[f]; if(own!==-1) fw.classList.add('o'+own);
+    const own=res&&!shown?res.before:g.owner[f]; if(own!==-1) fw.classList.add('o'+own);
     const full=own!==-1&&g.ownerAtStart[f]===own; if(full) fw.classList.add('full');
     fw.innerHTML=`<img src="${IMG(`${FIMG[f]}`)}" alt="">`;
     const tag=document.createElement('div'); tag.className='ftag'+(own!==-1?' o'+own:'');
@@ -733,7 +766,10 @@ function render(){
     fw.onclick=(e)=>{ e.stopPropagation(); if(chargeMe){FL.actCharge(g,0,f);after();} else if(myTurn&&sel!=null) doPlace(f); else showInfo(f); };
     col.appendChild(fw);
     col.appendChild(lane(0));
-    if(res){const r=document.createElement('div');r.className='res';r.textContent=res.text;col.appendChild(r);}
+    if(shown){const r=document.createElement('div');r.className='res'+(stage!=null&&f===stage-1?' fade':'');r.textContent=res.text;col.appendChild(r);}
+    { const tf=tfOf(own,full), img=fw.querySelector('img');
+      if(lastTf[f]!=null&&lastTf[f]!==tf){ img.style.transition='none'; img.animate([{transform:lastTf[f]},{transform:tf}],{duration:650,easing:'cubic-bezier(.3,1.4,.5,1)'}); }
+      lastTf[f]=tf; }
     col.onclick=()=>{ if(chargeMe){FL.actCharge(g,0,f);after();} else if(myTurn&&sel!=null) doPlace(f); };
     B.appendChild(col);
   }
@@ -760,7 +796,7 @@ function render(){
       const ab=btn(ambMode?'伏兵模式：開':(amb2?'第 2 張伏兵（士氣 1）':'伏兵'),'',()=>{ambMode=!ambMode;render();},!FL.canAmbush(g,0));
       if(ambMode) ab.classList.add('on');
       btn('Pass','red',()=>{FL.actPass(g,0);sel=null;ambMode=false;after();},!FL.canPass(g,0));
-    } else m=g.passed[0]?'你已 pass，等電腦行動…':'電腦思考中…';
+    } else m=g.turn===0?'':g.passed[0]?'你已 pass，等電腦行動…':'電腦思考中…';
   } else if(g.phase==='command'){
     if(g.queue[0]===0&&!busy){ m=`回合開始：統帥要發動號令嗎？（士氣 ${FL.GENERALS.marshal.cost}，本回合你每張兵 +1）`;
       btn('發動號令','pri',()=>{FL.actCommand(g,0,true);after();}); btn('不發動','',()=>{FL.actCommand(g,0,false);after();}); }
@@ -773,14 +809,19 @@ function render(){
     if(g.queue[0]===0&&!busy){ m=`亮牌！先鋒將要突入嗎？點一處戰場（士氣 ${FL.GENERALS.vanguard.cost}，主將戰力 ${FL.GENERALS.vanguard.power}）`;
       btn('不突入','',()=>{FL.actCharge(g,0,null);after();}); }
     else m='亮牌！電腦考慮是否讓先鋒將突入…';
+  } else if(stage!=null){
+    m=stage===0?'亮牌！':`交戰：${FL.FIELD_NAME[stage-1]}`;
   } else if(g.phase==='supply'&&showRes){
     m=sel==null?'交戰結束。補給：可選一張手牌放到牌庫底（選填）':`這張會放到牌庫底，然後補滿 ${g.handSize} 張`;
     btn(sel==null?'不放，直接補給':'放到牌庫底並補給','pri',doSupply);
-  } else if(g.phase==='over'){
+  } else if(g.phase==='over'&&stage==null){
     m=endText(); btn('再來一局','pri',()=>openStart());
   }
   $('msg').textContent=m;
   $('log').innerHTML=g.log.slice(-6).reverse().map(s=>'· '+s).join('<br>');
+  if(g.log.length<logLen) logLen=0;
+  for(const t of g.log.slice(logLen)) if(!t.startsWith('武將：')&&/弓將|先鋒將|號令|伏將|歸隊|伏兵在|洗成新牌庫/.test(t)) toast(t);
+  logLen=g.log.length;
 }
 function endText(){const r=g.result;return r.winner===0?`你贏了！（${r.how}）`:r.winner===1?`電腦獲勝（${r.how}）`:`平手（${r.how}）`;}
 
@@ -792,6 +833,7 @@ function doPlace(f){
   sel=null; ambMode=false; after();
 }
 function after(){
+  if(g.phase==='charge') openedBefore=true;
   render();
   if(g.phase==='deploy'&&g.turn===1){ busy=true; render(); setTimeout(aiStep,700); }
   else if(['command','shoot','charge'].includes(g.phase)&&g.queue[0]===1){ busy=true; render(); setTimeout(aiGen,800); }
@@ -809,13 +851,16 @@ function showGen(p){const G=FL.GENERALS[g.gen[p]];
 function aiStep(){
   const ch=FL.aiChoose(g,1); FL.applyChoice(g,1,ch); busy=false; after();
 }
-function doBattle(){
-  // 先記下翻開的牌供顯示
+async function doBattle(){
   const snap=[0,1,2].map(f=>({c0:g.placed[0][f].slice(),c1:g.placed[1][f].slice()}));
   const res=FL.battle(g);
   res.forEach((r,f)=>{r.cards0=snap[f].c0;r.cards1=snap[f].c1;});
-  busy=false; showRes=true; render();
-  if(g.phase==='over') setTimeout(showEnd,900);
+  showRes=true; busy=true;
+  if(!openedBefore){ stage=0; flipNow=true; render(); flipNow=false; await banner('亮牌！','',900); }
+  openedBefore=false;
+  for(let k=1;k<=3;k++){ stage=k; render(); await sleep(1150); }
+  stage=null; busy=false; render();
+  if(g.phase==='over') setTimeout(showEnd,700);
 }
 function doSupply(){
   FL.supply(g,0,sel); FL.supply(g,1,FL.aiSupplyChoice(g)); sel=null; showRes=false;
@@ -824,7 +869,8 @@ function doSupply(){
   g.roundFirst=g.turn===-1?g.first:g.first;
   g.roundFirst=g.first;
   g.log.push(`— 第 ${g.round} 回合，${ownerName(g.first)}先手 —`);
-  after();
+  seen=new Set(); busy=true; render();
+  banner(`第 ${g.round} 回合`,`先手：${ownerName(g.first)}`).then(()=>{busy=false;after();});
 }
 function showEnd(){ $('endT').textContent=g.result.winner===0?'🏆 勝利！':g.result.winner===1?'敗北':'平手'; $('endS').textContent=endText(); $('mEnd').classList.add('show'); render(); }
 function showInfo(f){
@@ -841,7 +887,8 @@ function startGame(){
   sel=null; ambMode=false; busy=false; showRes=false;
   g.log.push(`【${FL.MODES[mode].name}模式】`);
   g.log.push(`— 第 1 回合，擲硬幣：${ownerName(g.first)}先手 —`);
-  $('mStart').classList.remove('show'); after();
+  $('mStart').classList.remove('show'); seen=new Set(); lastTf=[null,null,null]; logLen=0; stage=null; openedBefore=false;
+  busy=true; render(); banner('第 1 回合',`先手：${ownerName(g.first)}（擲硬幣）`).then(()=>{busy=false;after();});
 }
 document.addEventListener('click',e=>{const c=e.target.getAttribute&&e.target.getAttribute('data-close'); if(c) $(c).classList.remove('show');});
 $('diff').onclick=e=>{const d=e.target.getAttribute('data-d'); if(!d) return; diff=d; [...$('diff').children].forEach(b=>b.classList.toggle('on',b===e.target));};
